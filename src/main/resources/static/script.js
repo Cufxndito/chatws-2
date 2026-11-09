@@ -1,15 +1,38 @@
 let stompClient = null;
 
 function connect() {
-    const serverIp = document.getElementById('serverIp').value;
-    
-//conexion y subcripcion
+    const serverIp = document.getElementById('serverIp').value.trim() || 'localhost';
+    const socket = new SockJS('http://' + serverIp + ':8080/ws');
+
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+        setConnected(true);
+
+        stompClient.subscribe('/topic/public', function (payload) {
+            showMessage(JSON.parse(payload.body));
+        });
+
+        const username = document.getElementById('username').value.trim() || 'Anonimo';
+        stompClient.send('/app/chat.addUser', {}, JSON.stringify({
+            usuario: username,
+            tipo: 'JOIN'
+        }));
+    }, function (error) {
+        console.error('Error de conexion: ', error);
+        setConnected(false);
+    });
 }
 
 function disconnect() {
-    // Desconectar
+    if (stompClient !== null) {
+        stompClient.disconnect(function () {
+            console.log('Disconnected');
+        });
+        stompClient = null;
+    }
     setConnected(false);
-    console.log("Disconnected");
 }
 
 function setConnected(connected) {
@@ -25,12 +48,21 @@ function setConnected(connected) {
 }
 
 function sendMessage() {
-    const username = document.getElementById('username').value;
+    const username = document.getElementById('username').value.trim() || 'Anonimo';
     const content = document.getElementById('message').value;
     
     if (content.trim() === '') return;
-    
-     // Conexion
+
+    if (stompClient === null || !stompClient.connected) {
+        console.warn('No hay conexion con el servidor');
+        return;
+    }
+
+    stompClient.send('/app/chat.sendMessage', {}, JSON.stringify({
+        usuario: username,
+        contenido: content,
+        tipo: 'CHAT'
+    }));
     
     document.getElementById('message').value = '';
 }
@@ -39,14 +71,18 @@ function showMessage(message) {
     const messages = document.getElementById('messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message';
-    messageDiv.innerHTML = '<strong>' + message.usuario + ':</strong> ' + message.contenido;
+    const user = document.createElement('strong');
+    user.textContent = message.usuario + ':';
+    messageDiv.appendChild(user);
+    messageDiv.appendChild(document.createTextNode(' ' + message.contenido));
     messages.appendChild(messageDiv);
     messages.scrollTop = messages.scrollHeight;
 }
 
-// Allow sending message with Enter key
 document.getElementById('message').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         sendMessage();
     }
 });
+
+setConnected(false);
