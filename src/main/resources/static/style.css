@@ -127,3 +127,5 @@ button:hover {
         padding: 14px 20px;
     }
 }
+
+.message.event { color: #777; font-style: italic; }

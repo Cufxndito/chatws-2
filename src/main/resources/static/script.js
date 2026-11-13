@@ -1,6 +1,7 @@
 let stompClient = null;
 
 function connect() {
+    if (stompClient !== null && stompClient.connected) return;
     const serverIp = document.getElementById('serverIp').value.trim() || 'localhost';
     const socket = new SockJS('http://' + serverIp + ':8080/ws');
 
@@ -70,11 +71,18 @@ function sendMessage() {
 function showMessage(message) {
     const messages = document.getElementById('messages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message';
-    const user = document.createElement('strong');
-    user.textContent = message.usuario + ':';
-    messageDiv.appendChild(user);
-    messageDiv.appendChild(document.createTextNode(' ' + message.contenido));
+
+    if (message.tipo === 'JOIN' || message.tipo === 'LEAVE') {
+        messageDiv.className = 'message event';
+        messageDiv.textContent = message.usuario +
+            (message.tipo === 'JOIN' ? ' se unio al chat' : ' salio del chat');
+    } else {
+        messageDiv.className = 'message';
+        const user = document.createElement('strong');
+        user.textContent = message.usuario + ':';
+        messageDiv.appendChild(user);
+        messageDiv.appendChild(document.createTextNode(' ' + (message.contenido || '')));
+    }
     messages.appendChild(messageDiv);
     messages.scrollTop = messages.scrollHeight;
 }

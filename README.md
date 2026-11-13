@@ -43,3 +43,11 @@ ChatWS es una aplicación de chat en tiempo real que permite a múltiples usuari
 5. **Broadcast:** El mensaje se reenvía a todos los suscriptores de `/topic/public`
 6. **Recepción:** Todos los clientes conectados reciben el mensaje simultáneamente
 
+
+## Ejecutar
+
+```bash
+./mvnw spring-boot:run
+```
+
+Abrir `http://localhost:8080` en dos pestañas, conectar con usuarios distintos y chatear. Destinos: `/ws` (endpoint SockJS), `/app/chat.addUser`, `/app/chat.sendMessage`, `/topic/public`. Al desconectarse, el servidor emite un mensaje `LEAVE`.
